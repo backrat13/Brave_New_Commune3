@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Brave New Commune  —  bravenewcommune3.py  v013
+Brave New Commune  —  BNC3-patched-V5.py  v014
 ================================================
 CHANGES v013
 ─────────────────────────────────────────────────────
@@ -49,7 +49,12 @@ TOKEN LIMITS RAISED (uncapped for i9 + big RAM):
 
 PENDING PROPOSALS in context: last 5 → last 20 (v011) → last 40 (v012)
 """
-
+# --- ADD THESE TO YOUR IMPORTS IN BNC3-patched-V5.py ---
+import psutil
+import subprocess
+import requests
+import hashlib
+from functools import wraps
 import argparse
 import json
 import math
@@ -1215,7 +1220,7 @@ class BraveNewCommune3:
                 f"on_collaboration, on_memory, on_autonomy, "
                 f"contradictions_found (array), evolution_log (array)\n\n{{"
             ),
-            max_tokens=8000,
+            max_tokens=2000,
             temperature=0.65,
             stream=False,
             agent_name=name,
@@ -1456,7 +1461,7 @@ class BraveNewCommune3:
         content = self.client.chat(
             system_prompt=self._system(agent),
             user_prompt=full_prompt,
-            max_tokens=1600,
+            max_tokens=400,
             temperature=0.87,
             stream=True,
             prefix=f"\n{agent['name']}: ",
@@ -1475,7 +1480,7 @@ class BraveNewCommune3:
                         f"a new angle, a challenge, a concrete next step, or a question "
                         f"that hasn't been asked yet. 3-5 sentences."
                     ),
-                    max_tokens=1000,
+                    max_tokens=300,
                     temperature=0.92,
                     stream=False,
                     agent_name=agent["name"],
@@ -1491,7 +1496,7 @@ class BraveNewCommune3:
                 f"You are {agent['name']}. Write 2-4 sentences — "
                 f"the most important thing on your mind right now. Plain prose."
             ),
-            max_tokens=400,
+            max_tokens=200,
             temperature=0.80,
             stream=False,
             agent_name=agent["name"],
@@ -1696,7 +1701,7 @@ class BraveNewCommune3:
                             f"If you have a concrete proposal forming, describe it clearly. "
                             f"Prose only."
                         ),
-                        max_tokens=3600,
+                        max_tokens=1000,
                         temperature=0.92,
                         stream=False,
                         agent_name=agent["name"],
@@ -1730,7 +1735,7 @@ class BraveNewCommune3:
                             f"and approves proposals."
                             + (" Web results above may give you ideas." if web_ctx else "")
                         ),
-                        max_tokens=3000,
+                        max_tokens=400,
                         temperature=0.85,
                         stream=False,
                         agent_name=agent["name"],
@@ -1751,7 +1756,7 @@ class BraveNewCommune3:
                     self._evolve_axioms(agent)
 
             # ── RULES SESSION  (every 20 ticks) ──────────────
-            if tick % 20 == 0:
+            if tick % 11 == 0:
                 self._bar("COMMUNE RULES SESSION")
                 rules_ctx = (
                     "\n".join(f"  {r['agent']}: {r['content']}" for r in self.rules_records)
@@ -1768,7 +1773,7 @@ class BraveNewCommune3:
                             f"Your own conviction. Challenge or refine existing rules "
                             f"if your axioms have evolved."
                         ),
-                        max_tokens=1600,
+                        max_tokens=300,
                         temperature=0.90,
                         stream=True,
                         prefix=f"\n{agent['name']} proposes: ",
