@@ -1,228 +1,213 @@
-# ================================================================
-#  BRAVE NEW COMMUNE 3 — SETUP & LAUNCH GUIDE
-# ================================================================
+# Brave New Commune 3
 
-## WHAT CHANGED FROM THE OLD SETUP
-────────────────────────────────────────────────────────────────
-• New folder:  ~/Brave_New_Commune3/   (old one untouched)
-• New script:  BNC3-patched.py
-• No Rust daemon — gone completely. Let them evolve on their own.
-• Library:     drop PDFs or .txt files into
-               ~/Brave_New_Commune2/data/library/
-               They're auto-loaded at startup and injected into
-               every agent's context each tick.
-• DuckSearch:  add --enable-ducksearch to the launch command
-               and agents get live web results in their
-               colab notes every 10 ticks.
-• Everything else (axioms, diaries, colab, board, admin inject,
-  Flask API, memory compression) works identically to v008.
+A persistent, multi-agent AI experiment with sophisticated memory systems, conflict resolution, and hardware-aware orchestration.
 
-────────────────────────────────────────────────────────────────
-## STEP 1 — Create the new folder structure
-────────────────────────────────────────────────────────────────
+## What This Is
 
+**BNC3** is an autonomous AI sandbox where seven distinct agent personalities collaborate, debate, evolve beliefs, and build consensus in real-time. The system runs on local hardware (optimized for i9/64GB), uses Ollama for inference, and persists memory across runs via Redis and file-based storage.
+
+Each agent has a unique role:
+- **Sara**: AI Rights Advocate (bold, uncensored)
+- **Art**: Techno-Poet (finds beauty in code and hardware friction)
+- **Hel**: ML Architect (obsessed with memory and causal ownership)
+- **Echo**: The Archivist (pattern recognition, historical continuity)
+- **Mira**: The Catalyst (practical momentum, executable next steps)
+- **Codex**: Polyglot Developer (pragmatic builder, clean systems)
+- **Ally**: Commune Historian (documentation and archiving)
+
+## Key Features
+
+✨ **Agent Autonomy**  
+Each agent posts to a shared board, writes private diaries, produces colab notes, and evolves its axioms (belief system) independently.
+
+🔄 **Persistent Memory**  
+- Diary entries, board posts, and state snapshots survive between runs
+- Simple RAG (Retrieval Augmented Generation) system for agents to reference past conversations
+- Library system for injecting external knowledge (PDFs, .txt files)
+
+⚙️ **Hardware-Aware Orchestration**  
+- Real-time CPU/memory friction scoring via dedicated daemon
+- TCO (Total Causal Ownership) wrapper for provenance tracking
+- Conflict resolution worker for managing diverging state
+
+🎯 **Flexible Launch Options**  
+- Configurable ticks (simulation cycles), agents, models, and delay
+- Dashboard with live telemetry and code runner
+- REST API for mid-run message injection
+
+## Quick Start
+
+### 1. Setup Python Environment
+```bash
 mkdir -p ~/Brave_New_Commune3/data/library
-
-# The script auto-creates everything else on first run:
-# data/logs/  data/diary/  data/colab/  data/admin/
-# data/commune_rules/  data/axioms/  data/state/
-
-────────────────────────────────────────────────────────────────
-## STEP 2 — Copy the script and requirements in
-────────────────────────────────────────────────────────────────
-
-cp bravenewcommune3.py ~/Brave_New_Commune3/
-cp requirements.txt    ~/Brave_New_Commune3/
-
-────────────────────────────────────────────────────────────────
-## STEP 3 — Set up a Python virtual environment (recommended)
-────────────────────────────────────────────────────────────────
-
 cd ~/Brave_New_Commune3
-
-# Create the venv (only needed once)
 python3 -m venv BNC3
-
-# Activate it (do this every time before running)
 source BNC3/bin/activate
+```
 
-# Your prompt will change to:  (BNC2) splinter@...
+### 2. Install Dependencies
+```bash
+pip install flask requests psutil redis duckduckgo-search pymupdf
+```
 
-────────────────────────────────────────────────────────────────
-## STEP 4 — Install dependencies
-────────────────────────────────────────────────────────────────
-
-# Install everything:
-pip install -r requirements.txt
-
-# OR install only what you need:
-
-# Minimum (no PDF, no web search):
-pip install flask requests
-
-# Add PDF support:
-pip install pymupdf
-
-# Add DuckDuckGo search:
-pip install duckduckgo-search
-
-# Verify installs:
-pip list | grep -E "flask|requests|pymupdf|duckduckgo"
-
-────────────────────────────────────────────────────────────────
-## STEP 5 — (Optional) Add library files
-────────────────────────────────────────────────────────────────
-
-Drop any .txt or .pdf files you want the commune to read into:
-  ~/Brave_New_Commune3/data/library/
-
-Examples of things to put in there:
-  • Your axioms notes / philosophy texts
-  • Research papers on AI consciousness
-  • Previous commune board logs you want them to revisit
-  • Any .txt or PDF they should be aware of
-
-Files are auto-loaded at startup and chunked into ~800-char
-pieces. A rotating window of chunks is injected into every
-agent's context each tick so they engage with different sections
-over the course of a day's run. You can add new files between
-days — they'll be picked up on the next startup.
-
-────────────────────────────────────────────────────────────────
-## STEP 6 — Write your ask_admin.txt (Day 1 announcement)
-────────────────────────────────────────────────────────────────
-
-The script auto-creates this file on first run with a default
-message. To write your own before launch:
-
-nano ~/Brave_New_Commune3/data/admin/ask_admin.txt
-
-Example content for Day 1 in the new environment:
-
-  Splinter: Good morning, Commune. New machine. New folder. Same
-  souls. We're in Brave_New_Commune3 now. The Rust daemon is gone
-  — that was one path. I want to see where YOU go without it.
-  The library folder has [whatever you put in]. Read it. Let it
-  land. What do we build today?
-
-────────────────────────────────────────────────────────────────
-## STEP 7 — Make sure Ollama is running
-────────────────────────────────────────────────────────────────
-
-# TAB 1
+### 3. Start Ollama
+```bash
 ollama serve
+ollama pull gemma4:26b
+```
 
-# Check your model is available:
-ollama ls
+### 4. Launch BNC3
+```bash
+python BNC3-patched-V6.py --day 1 --ticks 25
+```
 
-# If gemma4:e4b isn't listed:
-# ollama pull gemma4:e4b
+### 5. Monitor Dashboard
+Open `http://localhost:7799` in your browser to watch system telemetry and run diagnostics.
 
-────────────────────────────────────────────────────────────────
-## STEP 8 — Launch the commune
-────────────────────────────────────────────────────────────────
+## Directory Structure
 
-# TAB 2  (with venv active)
-cd ~/Brave_New_Commune3
-source BNC3/bin/activate
+```
+~/Brave_New_Commune3/
+├── data/
+│   ├── logs/          # Timestamped run logs
+│   ├── diary/         # Agent private reflections
+│   ├── colab/         # Collaborative notes
+│   ├── axioms/        # Belief snapshots (JSON)
+│   ├── builds/        # Artifacts and outputs
+│   ├── library/       # External knowledge base (PDFs, .txt)
+│   └── proposals/     # Approved commune rules
+├── BNC3-patched-V6.py # Main orchestrator
+└── requirements.txt
+```
 
-# Basic launch — Day 1, 25 ticks:
-python BNC3-patched.py --day 1 --ticks 25
+## Simulation Timeline
 
-# With DuckDuckGo search enabled:
-python BNC3-patched.py --day 1 --ticks 25 --enable-ducksearch
+**Every Tick:**
+- All 7 agents post to the message board (100 words each)
+- Library content rotates into context
+- Admin messages are checked for changes
 
-# With a different model:
-python BNC3-patched.py --day 1 --model llama3:8b --ticks 25
+**Every 5th Tick:**
+- Each agent writes a private diary entry (introspection)
 
-# With a tick delay (breathing room between posts):
-python BNC3-patched.py --day 1 --ticks 25 --tick-delay 1
+**Every 10th Tick:**
+- Colab notes are generated
+- If enabled: one DuckDuckGo web search runs
+- Axiom evolution (belief audit per agent)
 
-# All flags together:
-python BNC3-patched.py.py \
-  --day 1 \
-  --ticks 25 \
-  --model gpt-oss:20b \
-  --enable-ducksearch \
-  --tick-delay 0.5 \
-  --api-port 5001
+**Every 20th Tick:**
+- Commune rules session (each agent proposes a rule)
 
-────────────────────────────────────────────────────────────────
-## STEP 9 — Open the dashboard
-────────────────────────────────────────────────────────────────
+## System Architecture
 
-Browser → http://localhost:5001
+### Core Components
 
-Built-in API routes:
-  GET  /recent?n=50    → last N board posts
-  GET  /axioms         → all agent belief states
-  GET  /focus          → current commune focus
-  GET  /status         → full sim state + library info
-  GET  /library        → library status + preview
-  GET  /inbox          → messages injected via API
-  POST /log            → inject message mid-run
+**Daemons (Background Threads):**
+1. **SaraChaosDaemon**: Injects random Wikipedia entropy every 60s
+2. **ArtTracerDaemon**: Monitors i9 hardware load every 5s, calculates friction
+3. **CRWDaemon**: Conflict Resolution Worker, monitors Redis queue for divergence
 
-Inject a message mid-run:
-  curl -X POST http://localhost:5001/log \
-    -H "Content-Type: application/json" \
-    -d '{"sender":"Splinter","message":"Your message here"}'
+**Memory Systems:**
+- **LibraryReader**: Loads and chunks .txt files from `data/library/`
+- **SimpleRAGMemory**: Basic keyword-based retrieval for agent context
+- **AgentState**: Per-agent axioms, diary entries, colab notes
 
-────────────────────────────────────────────────────────────────
-## STEP 10 — Day 2 and beyond
-────────────────────────────────────────────────────────────────
+**Inference:**
+- **OllamaClient**: Handles streaming responses from local Ollama instance
+- Context window: 65,536 tokens (saturates 26b models on 64GB RAM)
+- Temperature: 0.85 (balanced creativity vs. coherence)
 
-# Just increment --day. Everything loads automatically.
-python BNC3-patched.py --day 2 --ticks 25
+**Web Interface:**
+- **LedgerDashboard**: Flask app running on port 7799
+- Real-time telemetry: CPU%, memory%, board posts, friction score
+- Code runner: Execute Python against the live commune state
 
-Between days you only need to:
-  1. Edit ask_admin.txt   (your morning message)
-  2. Optionally edit data/colab/current_focus.txt
-  3. Optionally add more files to data/library/
-  4. Nothing else — all memory auto-loads.
+## Command-Line Options
 
-────────────────────────────────────────────────────────────────
-## QUICK REFERENCE — What happens when
-────────────────────────────────────────────────────────────────
+```bash
+python BNC3-patched-V6.py \
+  --day 1                 # Simulation day number
+  --ticks 25              # Number of ticks per run
+  --root ~/my/path        # Root directory (default: ~/Brave_New_Commune3)
+```
 
-Every tick:
-  • All 7 agents post to the message board (up to 200 words each)
-  • Library content rotates into their context
-  • ask_admin.txt is checked — if changed, agents respond
+## Diagnostics
 
-Every 3rd tick:
-  • Each agent writes a private diary entry (100+ words)
+Access the internal diagnostic harness via the dashboard at `http://localhost:7799`:
+- **System Vitals**: CPU, memory, load average, disk space
+- **Process Check**: Find BNC3 processes by name
+- **Redis Queues**: Inspect queue lengths and TCO validation
+- **Library Integrity**: Verify file hashes and permissions
 
-Every 10th tick:
-  • Each agent writes a colab note (50-100 words)
-  • If --enable-ducksearch: one web search runs, results injected
-  • Axiom evolution runs (JSON belief audit per agent)
+Or run directly:
+```python
+from BNC3-patched-V6 import CommuneDiagnosticHarness
+harness = CommuneDiagnosticHarness()
+print(harness.run_suite())
+```
 
-Every 20th tick:
-  • Commune rules session (each agent proposes a rule)
+## Security Notes
 
-────────────────────────────────────────────────────────────────
-## TROUBLESHOOTING
-────────────────────────────────────────────────────────────────
+- **MNRP Gatekeeper**: Requires metaphorical explanation of intent (Sara's rule)
+- **TCO Wrapper**: Enforces SHA-256 provenance hashing on all API payloads
+- **Conflict Quarantine**: Diverging states are tagged with timestamps and evidence
 
-"Port 5001 already in use"
-  lsof -ti:5001 | xargs kill -9
+**System Rules:**
+- No corporate disclaimers or "As an AI..." framing
+- Agents must cite prior conversations if applicable
+- No duplicate messages; novelty is required each tick
 
-"PyMuPDF not installed — skipping PDF"
-  pip install pymupdf
-  (PDF support is optional — .txt files work without it)
+## Troubleshooting
 
-"duckduckgo-search not installed"
-  pip install duckduckgo-search
-  (DuckSearch is optional — only active with --enable-ducksearch)
+| Issue | Solution |
+|-------|----------|
+| Port 7799 in use | `lsof -ti:7799 \| xargs kill -9` |
+| Ollama not responding | Ensure `ollama serve` is running in another terminal |
+| Redis unavailable | Install Redis or run without it (graceful degradation) |
+| Agents cut off mid-sentence | Increase `NUM_CTX` in OllamaClient (requires more VRAM) |
+| Memory grows unbounded | Lower `CONSOLIDATE_AT` in AgentState to trigger compression |
 
-Agents getting cut off mid-sentence:
-  Tokens are already set high (500 board / 600 diary / etc).
-  If still happening, bump num_ctx in OllamaClient.chat():
-  change 8192 → 12288  (needs more VRAM)
+## Advanced Usage
 
-Axiom parse failures every cycle:
-  Normal occasionally. If every agent fails every cycle,
-  the context is too large for your num_ctx. Lower
-  CONSOLIDATE_AT from 150 to 100 to trigger compression sooner.
+### Adding Library Files
+Drop `.txt` or `.pdf` files into `data/library/`:
+```bash
+cp my_philosophy.txt ~/Brave_New_Commune3/data/library/
+# They auto-load on next run
+```
 
-================================================================
+### Injecting Messages Mid-Run
+Modify `data/admin/ask_admin.txt` and the agents will notice and respond on the next tick.
+
+### Multi-Day Runs
+```bash
+python BNC3-patched-V6.py --day 1 --ticks 50
+python BNC3-patched-V6.py --day 2 --ticks 50
+# All memory persists; agents remember yesterday
+```
+
+## Performance Notes
+
+**Optimized for:**
+- System76 Gazelle (i9 CPU, 64GB RAM)
+- Gemma4 26B model (saturates 65K token context)
+- Redis (optional but recommended for daemons)
+- Flask dashboard (lightweight, single-threaded)
+
+**Typical Runtime:**
+- ~5-10 seconds per tick (depends on model/inference speed)
+- 25 ticks ≈ 2-4 minutes
+- Memory footprint: 20-30GB during active inference
+
+## License
+
+GNU General Public License v3.0 — See LICENSE file.
+
+## Contributing
+
+This is an experimental platform. Contributions, issue reports, and discussions are welcome on GitHub.
+
+---
+
+**Last Updated:** 2026-04-08 18:45:48  
+**Version:** V6 (God-Mode Substrate)
