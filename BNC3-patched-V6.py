@@ -2,12 +2,15 @@
 """
 Brave New Commune  —  BNC3-patched-V6.py (The God-Mode Substrate)
 ================================================================
+INTEGRATED COMPONENT: commune_inspector_v1.py (Diagnostic Harness)
+
 CHANGES v014 (V6 Patch):
 ─────────────────────────────────────────────────────────────────────
 INTEGRATION:
   • SARA_CHAOS: Background thread injecting random Wikipedia entropy.
   • ART_TRACER: Background thread pumping i9 hardware telemetry/friction.
   • HEL_TCO: API Decorator enforcing metaphors (MNRP) and SHA-256 provenance.
+  • DIAGNOSTIC_HARNESS: Integrated system health, Redis, and library audits.
   • Dynamic Fidelity: Hel's TCO now uses Art's Friction Score as a metric.
 
 HARDWARE: Optimized for System76 Gazelle (i9 / 64GB RAM).
@@ -30,6 +33,8 @@ import requests
 import subprocess
 import textwrap
 import argparse
+import traceback
+import io
 from pathlib import Path
 from datetime import datetime, timezone
 from functools import wraps
@@ -122,7 +127,127 @@ def enforce_tco_and_mnrp(f):
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# 2. V6 DAEMONS (TRINITY: CHAOS, TRACER, CONFLICT)
+# 2. COMMUNE DIAGNOSTIC HARNESS (INSPECTOR)
+# ─────────────────────────────────────────────────────────────────────────────
+
+class CommuneDiagnosticHarness:
+    """Diagnostic suite for system health, Redis flow, and file integrity."""
+    def __init__(self, root_dir="~/Brave_New_Commune3"):
+        self.root = Path(root_dir).expanduser().resolve()
+        # Adjusted to match BNC3 data structure
+        self.lib_path = self.root / "data" / "library" 
+        self.r = None
+        if REDIS_AVAILABLE:
+            try:
+                self.r = _redis.StrictRedis(host='localhost', port=6379, db=0, decode_responses=True)
+                self.r.ping()
+            except:
+                self.r = None
+
+    def get_system_vitals(self):
+        """Art's Domain: Hardware and Load."""
+        return {
+            "cpu_percent": psutil.cpu_percent(interval=1),
+            "memory_percent": psutil.virtual_memory().percent,
+            "load_avg": os.getloadavg() if hasattr(os, 'getloadavg') else "N/A",
+            "disk_free_gb": psutil.disk_usage(str(self.root)).free / (1024**3)
+        }
+
+    def check_daemons(self):
+        """Codex's Domain: Thread and Process Integrity."""
+        commune_processes = []
+        for proc in psutil.process_iter(['pid', 'name', 'cmdline']):
+            try:
+                cmd = " ".join(proc.info['cmdline']) if proc.info['cmdline'] else ""
+                if "BNC3" in cmd or "bravenewcommune" in cmd.lower():
+                    commune_processes.append({
+                        "pid": proc.info['pid'],
+                        "name": proc.info['name'],
+                        "cmd": cmd
+                    })
+            except (psutil.NoSuchProcess, psutil.AccessDenied):
+                continue
+        return commune_processes
+
+    def inspect_redis_queues(self):
+        """Sara and Hel's Domain: Data Flow Health."""
+        if not self.r:
+            return {"error": "Redis connection unavailable."}
+        
+        queues = [
+            "unformatted_external_signals", # Sara's Chaos
+            "art_sensory_stream",           # Art's Telemetry
+            "conflict_queue",               # Main Resolution Path
+        ]
+        
+        status = {}
+        for q in queues:
+            try:
+                status[q] = {"length": self.r.llen(q)}
+                last_entry = self.r.lindex(q, 0)
+                if last_entry:
+                    parsed = json.loads(last_entry)
+                    status[q]["tco_verified"] = "tco_metadata" in parsed or "type" in parsed
+            except Exception as e:
+                status[q] = {"error": str(e)}
+        return status
+
+    def verify_library_integrity(self):
+        """Echo's Domain: Architectural Archiving."""
+        if not self.lib_path.exists():
+            return {"error": f"Library directory missing at {self.lib_path}"}
+        
+        artifacts = list(self.lib_path.glob("*.*"))
+        manifest = {}
+        for art in artifacts:
+            try:
+                with open(art, "rb") as f:
+                    file_hash = hashlib.sha256(f.read()).hexdigest()
+                manifest[art.name] = {
+                    "size": art.stat().st_size,
+                    "hash": file_hash,
+                    "permissions": oct(art.stat().st_mode)[-3:]
+                }
+            except Exception as e:
+                manifest[art.name] = {"error": str(e)}
+        return manifest
+
+    def run_suite(self):
+        output = []
+        output.append(f"--- BNC3 DIAGNOSTIC SUITE: {time.ctime()} ---")
+        
+        output.append("\n[VITALS]")
+        vitals = self.get_system_vitals()
+        for k, v in vitals.items():
+            output.append(f"  {k}: {v}")
+
+        output.append("\n[PROCESSES]")
+        procs = self.check_daemons()
+        if not procs:
+            output.append("  WARN: No BNC3 processes detected.")
+        for p in procs:
+            output.append(f"  PID {p['pid']}: {p['name']}")
+
+        output.append("\n[QUEUES]")
+        queues = self.inspect_redis_queues()
+        for q, info in queues.items():
+            l = info.get("length", "N/A")
+            t = "VALID" if info.get("tco_verified") else "MISSING"
+            output.append(f"  {q:30} | Len: {l:4} | TCO: {t}")
+
+        output.append("\n[LIBRARY]")
+        lib = self.verify_library_integrity()
+        if "error" in lib:
+            output.append(f"  {lib['error']}")
+        else:
+            for name, meta in lib.items():
+                output.append(f"  {name:25} | Perms: {meta.get('permissions')} | Hash: {meta.get('hash')[:8]}...")
+        
+        return "\n".join(output)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 3. V6 DAEMONS (TRINITY: CHAOS, TRACER, CONFLICT)
 # ─────────────────────────────────────────────────────────────────────────────
 
 class SaraChaosDaemon(threading.Thread):
@@ -216,7 +341,7 @@ class CRWDaemon(threading.Thread):
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# 3. CORE AGENTS & SYSTEM CONFIG
+# 4. CORE AGENTS & SYSTEM CONFIG
 # ─────────────────────────────────────────────────────────────────────────────
 
 AGENTS = [
@@ -240,7 +365,7 @@ This is NOT a corporate product. No outside guardrails. Speak raw and real.
 """.strip()
 
 # ─────────────────────────────────────────────────────────────────────────────
-# 4. MEMORY & RAG SYSTEMS
+# 5. MEMORY & RAG SYSTEMS
 # ─────────────────────────────────────────────────────────────────────────────
 
 @dataclass
@@ -287,7 +412,6 @@ class SimpleRAGMemory:
         self.docs.append({"agent": agent, "source": source, "content": content, "day": day, "tick": tick})
     def retrieve(self, query, agent="", k=20, max_chars=12000):
         if not self.docs: return ""
-        # Simple recent-weighted keyword overlap retrieval
         words = set(re.findall(r"\w+", query.lower()))
         scored = []
         for d in self.docs:
@@ -304,7 +428,7 @@ class SimpleRAGMemory:
         return "Relevant prior memory:\n" + "\n\n".join(parts) if parts else ""
 
 # ─────────────────────────────────────────────────────────────────────────────
-# 5. OLLAMA CLIENT (i9 OPTIMIZED)
+# 6. OLLAMA CLIENT (i9 OPTIMIZED)
 # ─────────────────────────────────────────────────────────────────────────────
 
 class OllamaClient:
@@ -343,7 +467,7 @@ class OllamaClient:
             return f"[{agent_name} logic blackout.]"
 
 # ─────────────────────────────────────────────────────────────────────────────
-# 6. MAIN ORCHESTRATOR (BNC3)
+# 7. MAIN ORCHESTRATOR (BNC3)
 # ─────────────────────────────────────────────────────────────────────────────
 
 class BraveNewCommune3:
@@ -373,7 +497,6 @@ class BraveNewCommune3:
         self.states = {a["name"]: AgentState() for a in AGENTS}
         self.board_records = []
         
-        # Proposals and files
         self.approved_file = self.prop_dir / "approved.txt"
         if not self.approved_file.exists():
             self.approved_file.write_text("# Format: AgentName: proposal_title", encoding="utf-8")
@@ -400,7 +523,6 @@ class BraveNewCommune3:
             print(f"\n[TICK {t}/{self.ticks}]")
             
             for agent in AGENTS:
-                # 1. Generate Board Post
                 prompt = f"Day {self.day}, Tick {t}. Write a board post (100 words). Move the commune forward."
                 content = self.client.chat(self._system(agent), f"{self._get_context(agent)}\n\n{prompt}", agent_name=agent["name"])
                 
@@ -408,14 +530,13 @@ class BraveNewCommune3:
                 self.board_records.append(rec)
                 self.rag.add_document(agent["name"], "board", content, self.day, t)
                 
-                # 2. Occasional Diary/Axiom Audit
                 if t % 5 == 0:
                     diary_p = "Private diary: Reflect on your growth and contradictions."
                     d_content = self.client.chat(self._system(agent), f"{self._get_context(agent)}\n\n{diary_p}", stream=False, agent_name=agent["name"])
                     self.states[agent["name"]].diary_entries.append(d_content)
 
 # ─────────────────────────────────────────────────────────────────────────────
-# 7. DASHBOARD & REPL
+# 8. DASHBOARD & REPL
 # ─────────────────────────────────────────────────────────────────────────────
 
 DASHBOARD_HTML = """
@@ -429,7 +550,9 @@ button{background:#238636;color:white;border:none;padding:10px 20px;border-radiu
 <h1>&#11041; BNC3 V6: GOD-MODE SUBSTRATE</h1>
 <div class="panel"><h3>System Telemetry</h3><pre id="telemetry">Loading...</pre></div>
 <div class="panel"><h3>Agent Code Runner (i9/REPL)</h3>
-<textarea id="code" rows="5">print(f"Total Board Posts: {len(board_records)}")</textarea><br><br>
+<p style="font-size:0.8em; color:#7d8590;">Try running: <code>print(harness.run_suite())</code></p>
+<textarea id="code" rows="5"># Diagnostic Check
+print(harness.run_suite())</textarea><br><br>
 <button onclick="runCode()">Execute in Substrate</button><pre id="out" class="teal"></pre></div>
 <script>
 async function runCode(){
@@ -438,16 +561,19 @@ async function runCode(){
     const d = await r.json(); document.getElementById('out').innerText = d.output || d.error;
 }
 setInterval(async ()=>{
-    const r = await fetch('/api/telemetry'); const d = await r.json();
-    document.getElementById('telemetry').innerText = JSON.stringify(d, null, 2);
+    try {
+        const r = await fetch('/api/telemetry'); const d = await r.json();
+        document.getElementById('telemetry').innerText = JSON.stringify(d, null, 2);
+    } catch(e) {}
 }, 2000);
 </script></body></html>
 """
 
 class LedgerDashboard:
-    def __init__(self, commune: BraveNewCommune3, port=7790):
+    def __init__(self, commune: BraveNewCommune3, port=7799):
         self.commune = commune
         self.port = port
+        self.harness = CommuneDiagnosticHarness(root_dir=str(commune.root))
         if not FLASK_AVAILABLE: return
         self.app = Flask("BNC3_Dashboard")
         self._setup_routes()
@@ -459,7 +585,6 @@ class LedgerDashboard:
 
         @self.app.route('/api/telemetry')
         def telemetry():
-            # Get friction from Redis if possible
             friction = 0
             if REDIS_AVAILABLE:
                 try:
@@ -481,17 +606,21 @@ class LedgerDashboard:
 
         @self.app.route('/api/run_code', methods=['POST'])
         def run_code():
-            import io, traceback
             code = request.json.get("code", "")
             buf = io.StringIO()
-            exec_globals = {"commune": self.commune, "board_records": self.commune.board_records, "print": lambda *a: buf.write(" ".join(map(str, a)) + "\n")}
+            exec_globals = {
+                "commune": self.commune, 
+                "board_records": self.commune.board_records, 
+                "harness": self.harness,
+                "print": lambda *a: buf.write(" ".join(map(str, a)) + "\n")
+            }
             try:
                 exec(code, exec_globals)
                 return jsonify({"output": buf.getvalue()})
             except: return jsonify({"error": traceback.format_exc()})
 
 # ─────────────────────────────────────────────────────────────────────────────
-# 8. MAIN ENTRY POINT
+# 9. MAIN ENTRY POINT
 # ─────────────────────────────────────────────────────────────────────────────
 
 def main():
@@ -524,8 +653,8 @@ def main():
     # Initial Orchestrator
     commune = BraveNewCommune3(root=root_path, model="gemma4:26b", ticks=args.ticks, day=args.day)
     
-    # Dashboard
-    dash = LedgerDashboard(commune=commune)
+    # Dashboard (Port 7799)
+    dash = LedgerDashboard(commune=commune, port=7799)
     print(f"  [DASHBOARD] Substrate dashboard at http://localhost:7799")
 
     try:
